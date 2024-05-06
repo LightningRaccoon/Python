@@ -1,4 +1,5 @@
 import tkinter as tk
+from random import random
 from tkinter import ttk
 from tkinter import messagebox
 from ttkbootstrap import Style
@@ -16,36 +17,37 @@ import openpyxl
 import pandas as pd
 
 from openpyxl_image_loader import SheetImageLoader
+import os
 
-def load_dataframe(dataframe_file_path: str, dataframe_sheet_name: str) -> pd.DataFrame:
-    pxl_doc = openpyxl.load_workbook(dataframe_file_path)
-    pxl_sheet = pxl_doc[dataframe_sheet_name]
-    pxl_image_loader = SheetImageLoader(pxl_sheet)
-    pd_df = pd.read_excel(dataframe_file_path, sheet_name=dataframe_sheet_name)
-    for pd_row_idx, pd_row_data in pd_df.iterrows():
-        for pd_column_idx, _pd_cell_data in enumerate(pd_row_data):
-            # Offset as openpyxl sheets index by one, and also offset the row index by one more to account for the header row
-            pxl_cell_coord_str = pxl_sheet.cell(pd_row_idx + 2, pd_column_idx + 1).coordinate
-            if pxl_image_loader.image_in(pxl_cell_coord_str):
-            # Now that we have a cell that contains an image, we want to convert it to
-            # base64, and it make it nice and HTML, so that it loads in a front end
-                pxl_pil_img = pxl_image_loader.get(pxl_cell_coord_str)
-                with BytesIO() as pxl_pil_buffered:
-                    pxl_pil_img.save(pxl_pil_buffered, format="JPG")
-                    pxl_pil_img_b64_str = base64.b64encode(pxl_pil_buffered.getvalue())
-                    pd_df.iat[pd_row_idx, pd_column_idx] = '<img src="data:image/jpg;base64,' + \
-                                                                pxl_pil_img_b64_str.decode('utf-8') + \
-                                                                f'" alt="{pxl_cell_coord_str}" />'
-    return pd_df
+from PIL import Image, ImageTk
 
 
+def load_sheet_from_excel(file_name: str):
+    path = os.path.dirname(os.path.abspath(__file__)) + '/' + file_name
+    wb = openpyxl.load_workbook(path)
+    sheet = wb.active
 
-def LoadExcelFile():
-    excel_path = "E:\Programozas\Github Repos\Python\LearnHelper\VizsgaKerdesek.xlsx"
-    df = pd.read_excel(excel_path, sheet_name='alap')  # Specify sheet name if needed
+    return sheet
 
-    # Display the contents of the DataFrame
-    print(df)
+def get_questions(sheet: Sheet):
+    # Load the questions from the excel sheet
+    questions = []
+    for row in sheet.iter_rows(values_only=True):
+        question = (row[0], row[1], row[4])
+        questions.append(question)
+    return questions
+
+
+def load_images_from_folder(folder_path: str):
+    # Load only png files from the folder
+    images = []
+    for filename in os.listdir(folder_path):
+        if filename.endswith('.png'):
+            with open(os.path.join(folder_path, filename), 'rb') as f:
+                image = f.read()
+                images.append(image)
+    return images
+
 
 
 if __name__ == '__main__':
@@ -59,7 +61,59 @@ if __name__ == '__main__':
     style.configure('TLabel', font=('TkDefaultFont', 18))
     style.configure('TButton', font=('TkDefaultFont', 14))
 
-    LoadExcelFile()
-    print(load_dataframe("E:\Programozas\Github Repos\Python\LearnHelper\VizsgaKerdesek.xlsx", "alap"))
+    notebook = ttk.Notebook(root)
+    notebook.pack(fill='both', expand=True)
+
+    # Main page frame
+    main_frame = ttk.Frame(notebook)
+    notebook.add(main_frame, text='Main')
+
+    # Flip frame
+    flip_frame = ttk.Frame(notebook)
+    notebook.add(flip_frame, text='Flip')
+
+    question_label = ttk.Label(flip_frame, text='', font=('TkDefaultFont', 24))
+    question_label.pack(fill=tk.BOTH, expand=True)
+
+    image_label = ttk.Label(flip_frame)
+    image_label.pack(fill=tk.BOTH, expand=True)
+
+    ttk.Button(flip_frame, text='Flip', command=flip_card).pack(side=tk.LEFT, padx=10, pady=10)
+    ttk.Button(flip_frame, text='Next', command=next_card).pack(side=tk.RIGHT, padx=10, pady=10)
+    ttk.Button(flip_frame, text='Previous', command=previous_card).pack(side=tk.LEFT, padx=10, pady=10)
+
+    # A-B-C-D frame
+    abcd_frame = ttk.Frame(notebook)
+    notebook.add(abcd_frame, text='A-B-C-D')
+
+    question2_label = ttk.Label(abcd_frame, text='', font=('TkDefaultFont', 24))
+    question2_label.pack(fill=tk.BOTH, expand=True)
+
+    randomPlace = random.randint(0, 3)
+
+    var1 = tk.StringVar()
+    var2 = tk.StringVar()
+    var3 = tk.StringVar()
+    var4 = tk.StringVar()
+
+
+
+
+
+
+
+
+    # Load the images
+    images = load_images_from_folder('VizsgaKerdesek_elemei')
+
+    # Load the excel sheet
+    sheet = load_sheet_from_excel('VizsgaKerdesek.xlsx')
+    questions = get_questions(sheet)
+
+
+    root.mainloop()
+
+
+
 
 
