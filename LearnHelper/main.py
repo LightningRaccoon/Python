@@ -220,7 +220,7 @@ if __name__ == '__main__':
     style.configure('TButton', font=('TkDefaultFont', 14))
 
     # Load the images
-    images = load_images_from_folder('VizsgaKerdesekW_elemei')
+    images = load_images_from_folder('Source')
 
     # Load the Excel sheet
     sheet = load_sheet_from_excel('VizsgaKerdesek.xlsx')
